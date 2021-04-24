@@ -3,12 +3,13 @@ import os
 from collections import namedtuple
 import time
 from torch.nn import functional as F
-from model.utils.creator_tool import AnchorTargetCreator, ProposalTargetCreator
+from model.utils.rstar_cnn_creator_tool import AnchorTargetCreator, ProposalTargetCreator
 
 from torch import nn
 import torch as t
 from utils import array_tool as at
 from utils.vis_tool import Visualizer
+import numpy as np
 
 from utils.config import opt
 from torchnet.meter import ConfusionMeter, AverageValueMeter
@@ -22,7 +23,7 @@ LossTuple = namedtuple('LossTuple',
                         ])
 
 
-class FasterRCNNTrainer(nn.Module):
+class RStarCNNTrainer(nn.Module):
     """wrapper for conveniently training. return losses
 
     The losses include:
@@ -35,14 +36,14 @@ class FasterRCNNTrainer(nn.Module):
     * :obj:`total_loss`: The sum of 4 loss above.
 
     Args:
-        faster_rcnn (model.FasterRCNN):
+        rstar_cnn (model.FasterRCNN):
             A Faster R-CNN model that is going to be trained.
     """
 
-    def __init__(self, faster_rcnn):
-        super(FasterRCNNTrainer, self).__init__()
+    def __init__(self, rstar_cnn):
+        super(RStarCNNTrainer, self).__init__()
 
-        self.faster_rcnn = faster_rcnn
+        self.rstar_cnn = rstar_cnn
         self.rpn_sigma = opt.rpn_sigma
         self.roi_sigma = opt.roi_sigma
 
@@ -50,10 +51,10 @@ class FasterRCNNTrainer(nn.Module):
         self.anchor_target_creator = AnchorTargetCreator()
         self.proposal_target_creator = ProposalTargetCreator()
 
-        self.loc_normalize_mean = faster_rcnn.loc_normalize_mean
-        self.loc_normalize_std = faster_rcnn.loc_normalize_std
+        self.loc_normalize_mean = rstar_cnn.loc_normalize_mean
+        self.loc_normalize_std = rstar_cnn.loc_normalize_std
 
-        self.optimizer = self.faster_rcnn.get_optimizer()
+        self.optimizer = self.rstar_cnn.get_optimizer()
         # visdom wrapper
         self.vis = Visualizer(env=opt.env)
 
@@ -95,10 +96,10 @@ class FasterRCNNTrainer(nn.Module):
         _, _, H, W = imgs.shape
         img_size = (H, W)
 
-        features = self.faster_rcnn.extractor(imgs)
+        features = self.rstar_cnn.extractor(imgs)
 
         rpn_locs, rpn_scores, rois, roi_indices, anchor = \
-            self.faster_rcnn.rpn(features, img_size, scale)
+            self.rstar_cnn.rpn(features, img_size, scale)
 
         # Since batch size is one, convert variables to singular form
         bbox = bboxes[0]
@@ -110,18 +111,40 @@ class FasterRCNNTrainer(nn.Module):
         # Sample RoIs and forward
         # it's fine to break the computation graph of rois, 
         # consider them as constant input
-        sample_roi, gt_roi_loc, gt_roi_label = self.proposal_target_creator(
+        sample_roi, secondary_sample_roi, gt_roi_loc, gt_roi_label = self.proposal_target_creator(
             roi,
             at.tonumpy(bbox),
             at.tonumpy(label),
             self.loc_normalize_mean,
             self.loc_normalize_std)
+        # add global scene
+        global_scene = [0, 0, W, H]
+        secondary_sample_roi = np.append(secondary_sample_roi, [global_scene], axis=0)
+
         # NOTE it's all zero because now it only support for batch=1 now
         sample_roi_index = t.zeros(len(sample_roi))
-        roi_cls_loc, roi_score = self.faster_rcnn.head(
+        secondary_sample_roi_index = t.zeros(len(secondary_sample_roi))
+        roi_cls_loc, roi_score, secondary_roi_score = self.rstar_cnn.head(
             features,
             sample_roi,
-            sample_roi_index)
+            sample_roi_index,
+            secondary_sample_roi,
+            secondary_sample_roi_index)
+        # roi_cls_loc, roi_score = self.rstar_cnn.head(
+        #     features,
+        #     sample_roi,
+        #     sample_roi_index)
+
+
+        # ----------------- MIL context scores ------------------#
+        # print(
+        #     f"rois score shape {roi_score.shape} sec rois score shape {secondary_roi_score.shape}")
+        # secondary_roi_score = t.max(secondary_roi_score, dim=0).values
+        # print(
+        #     f"rois score shape {roi_score.shape} sec rois score shape {secondary_roi_score.shape}")
+
+        # print(f"secondary_roi_score {secondary_roi_score}")
+        # roi_score = t.add(roi_score, secondary_roi_score)
 
         # ------------------ RPN losses -------------------#
         gt_rpn_loc, gt_rpn_label = self.anchor_target_creator(
@@ -156,7 +179,9 @@ class FasterRCNNTrainer(nn.Module):
             gt_roi_label.data,
             self.roi_sigma)
 
+        # print(f"DEBUG: {len(roi_score)}, {gt_roi_label}")
         roi_cls_loss = nn.CrossEntropyLoss()(roi_score, gt_roi_label.cuda())
+        # print(f"roi_cls_loss [{roi_cls_loss}]")
 
         self.roi_cm.add(at.totensor(roi_score, False), gt_roi_label.data.long())
 
@@ -187,7 +212,7 @@ class FasterRCNNTrainer(nn.Module):
         """
         save_dict = dict()
 
-        save_dict['model'] = self.faster_rcnn.state_dict()
+        save_dict['model'] = self.rstar_cnn.state_dict()
         save_dict['config'] = opt._state_dict()
         save_dict['other_info'] = kwargs
         save_dict['vis_info'] = self.vis.state_dict()
@@ -212,9 +237,9 @@ class FasterRCNNTrainer(nn.Module):
     def load(self, path, load_optimizer=True, parse_opt=False, ):
         state_dict = t.load(path)
         if 'model' in state_dict:
-            self.faster_rcnn.load_state_dict(state_dict['model'])
+            self.rstar_cnn.load_state_dict(state_dict['model'])
         else:  # legacy way, for backward compatibility
-            self.faster_rcnn.load_state_dict(state_dict)
+            self.rstar_cnn.load_state_dict(state_dict)
             return self
         if parse_opt:
             opt._parse(state_dict['config'])

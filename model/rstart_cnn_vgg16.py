@@ -5,10 +5,11 @@ from torchvision.models import vgg16
 from torchvision.ops import RoIPool
 
 from model.region_proposal_network import RegionProposalNetwork
-from model.faster_rcnn import FasterRCNN
+from model.rstar_cnn import RStarCNN
 from utils import array_tool as at
 from utils.config import opt
 
+import copy
 
 def decom_vgg16():
     # the 30th layer of features is relu of conv5_3
@@ -37,7 +38,7 @@ def decom_vgg16():
     return nn.Sequential(*features), classifier
 
 
-class FasterRCNNVGG16(FasterRCNN):
+class RStarCNNVGG16(RStarCNN):
     """Faster R-CNN based on VGG-16.
     For descriptions on the interface of this model, please refer to
     :class:`model.faster_rcnn.FasterRCNN`.
@@ -56,7 +57,6 @@ class FasterRCNNVGG16(FasterRCNN):
     feat_stride = 16  # downsample 16x for output of conv5 in vgg16
 
     def __init__(self,
-                #  n_fg_class=20,
                  n_fg_class=11,
                  ratios=[0.5, 1, 2],
                  anchor_scales=[8, 16, 32]
@@ -78,7 +78,7 @@ class FasterRCNNVGG16(FasterRCNN):
             classifier=classifier
         )
 
-        super(FasterRCNNVGG16, self).__init__(
+        super(RStarCNNVGG16, self).__init__(
             extractor,
             rpn,
             head,
@@ -98,7 +98,6 @@ class VGG16RoIHead(nn.Module):
         classifier (nn.Module): Two layer Linear ported from vgg16
 
     """
-
     def __init__(self, n_class, roi_size, spatial_scale,
                  classifier):
         # n_class includes the background
@@ -116,7 +115,18 @@ class VGG16RoIHead(nn.Module):
         self.spatial_scale = spatial_scale
         self.roi = RoIPool( (self.roi_size, self.roi_size),self.spatial_scale)
 
-    def forward(self, x, rois, roi_indices):
+        # # for secondary
+        # self.context_classifier = copy.deepcopy(classifier)
+        # self.context_cls_loc = nn.Linear(4096, n_class * 4)
+        # self.context_score = nn.Linear(4096, n_class)
+
+        # normal_init(self.context_cls_loc, 0, 0.001)
+        # normal_init(self.context_score, 0, 0.01)
+
+        # self.context_roi = RoIPool((self.roi_size, self.roi_size), self.spatial_scale)
+
+    def forward(self, x, rois, roi_indices, context_rois, context_roi_indices):
+    # def forward(self, x, rois, roi_indices):
         """Forward the chain.
 
         We assume that there are :math:`N` batches.
@@ -139,14 +149,33 @@ class VGG16RoIHead(nn.Module):
         indices_and_rois = t.cat([roi_indices[:, None], rois], dim=1)
         # NOTE: important: yx->xy
         xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
-        indices_and_rois =  xy_indices_and_rois.contiguous()
+        indices_and_rois = xy_indices_and_rois.contiguous()
 
         pool = self.roi(x, indices_and_rois)
         pool = pool.view(pool.size(0), -1)
         fc7 = self.classifier(pool)
         roi_cls_locs = self.cls_loc(fc7)
         roi_scores = self.score(fc7)
-        return roi_cls_locs, roi_scores
+        
+        context_roi_scores = 0
+        # in case roi_indices is  ndarray
+        # context_roi_indices = at.totensor(context_roi_indices).float()
+        # context_rois = at.totensor(context_rois).float()
+        # context_indices_and_rois = t.cat(
+        #     [context_roi_indices[:, None], context_rois], dim=1)
+        # # NOTE: important: yx->xy
+        # context_xy_indices_and_rois = context_indices_and_rois[:, [
+        #     0, 2, 1, 4, 3]]
+        # context_indices_and_rois = context_xy_indices_and_rois.contiguous()
+
+        # context_pool = self.context_roi(x, context_indices_and_rois)
+        # context_pool = context_pool.view(context_pool.size(0), -1)
+        # context_fc7 = self.context_classifier(context_pool)
+        # context_roi_cls_locs = self.context_cls_loc(context_fc7)
+        # context_roi_scores = self.context_score(context_fc7)
+        
+        return roi_cls_locs, roi_scores, context_roi_scores
+        # return roi_cls_locs, roi_scores
 
 
 def normal_init(m, mean, stddev, truncated=False):

@@ -62,7 +62,8 @@ class VOCBboxDataset:
 
     """
 
-    def __init__(self, data_dir, split='trainval',
+    # def __init__(self, data_dir, split='trainval',
+    def __init__(self, data_dir, split='train',
                  use_difficult=False, return_difficult=False,
                  ):
 
@@ -74,16 +75,19 @@ class VOCBboxDataset:
         #             ' in addition to the above mentioned splits.'
         #         )
         id_list_file = os.path.join(
-            data_dir, 'ImageSets/Main/{0}.txt'.format(split))
+            # data_dir, 'ImageSets/Main/{0}.txt'.format(split))
+            data_dir, 'ImageSets/Action/{0}.txt'.format(split))
 
         self.ids = [id_.strip() for id_ in open(id_list_file)]
+        print(f"Num of ids [{len(self.ids)}]")
         self.data_dir = data_dir
         self.use_difficult = use_difficult
         self.return_difficult = return_difficult
         self.label_names = VOC_BBOX_LABEL_NAMES
 
     def __len__(self):
-        return len(self.ids)
+        # DEBUG
+        return len(self.ids[:50])
 
     def get_example(self, i):
         """Returns the i-th example.
@@ -114,10 +118,19 @@ class VOCBboxDataset:
             bndbox_anno = obj.find('bndbox')
             # subtract 1 to make pixel indexes 0-based
             bbox.append([
-                int(bndbox_anno.find(tag).text) - 1
+                int(float(bndbox_anno.find(tag).text)) - 1
                 for tag in ('ymin', 'xmin', 'ymax', 'xmax')])
             name = obj.find('name').text.lower().strip()
-            label.append(VOC_BBOX_LABEL_NAMES.index(name))
+
+            # get actions
+            actions = []
+            actions_obj = obj.find("actions")
+            for iaction in actions_obj:
+                if iaction.text == "1":
+                    actions.append(iaction.tag.lower().strip())
+
+            # label.append(VOC_BBOX_LABEL_NAMES.index(name))
+            label.append(VOC_BBOX_LABEL_NAMES.index(actions[0]))
         bbox = np.stack(bbox).astype(np.float32)
         label = np.stack(label).astype(np.int32)
         # When `use_difficult==False`, all elements in `difficult` are False.
@@ -134,24 +147,37 @@ class VOCBboxDataset:
     __getitem__ = get_example
 
 
+# VOC_BBOX_LABEL_NAMES = (
+#     'aeroplane',
+#     'bicycle',
+#     'bird',
+#     'boat',
+#     'bottle',
+#     'bus',
+#     'car',
+#     'cat',
+#     'chair',
+#     'cow',
+#     'diningtable',
+#     'dog',
+#     'horse',
+#     'motorbike',
+#     'person',
+#     'pottedplant',
+#     'sheep',
+#     'sofa',
+#     'train',
+#     'tvmonitor')
 VOC_BBOX_LABEL_NAMES = (
-    'aeroplane',
-    'bicycle',
-    'bird',
-    'boat',
-    'bottle',
-    'bus',
-    'car',
-    'cat',
-    'chair',
-    'cow',
-    'diningtable',
-    'dog',
-    'horse',
-    'motorbike',
-    'person',
-    'pottedplant',
-    'sheep',
-    'sofa',
-    'train',
-    'tvmonitor')
+    'jumping',
+    'other',
+    'phoning',
+    'playinginstrument',
+    'reading',
+    'ridingbike',
+    'ridinghorse',
+    'running',
+    'takingphoto',
+    'usingcomputer',
+    'walking'
+)
