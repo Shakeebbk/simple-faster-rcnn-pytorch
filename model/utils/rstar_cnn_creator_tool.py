@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.random as npr
 import torch
 from torchvision.ops import nms
 from model.utils.bbox_tools import bbox2loc, bbox_iou, loc2bbox
@@ -121,6 +122,33 @@ class ProposalTargetCreator(object):
 
         # The indices that we're selecting (both positive and negative).
         keep_index = np.append(pos_index, neg_index)
+
+        # Select secondary ROIs for fg regions
+        valid_fg = np.zeros(keep_index.shape[0], dtype=bool)
+        secondary_fg = np.zeros((0), dtype=np.int64)
+        for i, fg_i in enumerate(keep_index):
+            iou = bbox_iou(roi, roi[fg_i].reshape(1, 4))
+            max_iou = iou.max(axis=1)
+            CONTEXT_NUM_ROIS = 10
+            # cinds = np.where((boxes_overlaps[:, fg_i] >= cfg.TRAIN.IOU_LB) &
+            #                 (boxes_overlaps[:, fg_i] <= cfg.TRAIN.IOU_UB))[0]
+            cinds = np.where((max_iou < 0.75) &
+                             (max_iou >= 0.2))[0]
+
+            if cinds.size > CONTEXT_NUM_ROIS:
+                cinds = npr.choice(cinds, size=CONTEXT_NUM_ROIS,
+                                replace=False)
+            elif cinds.size > 0:
+                cinds = npr.choice(cinds, CONTEXT_NUM_ROIS,
+                                replace=True)
+            if cinds.size > 0:
+                assert(
+                    cinds.size == CONTEXT_NUM_ROIS), "Secondary RoIs are not of correct size"
+                valid_fg[i] = 1
+                secondary_fg = np.concatenate((secondary_fg, cinds), axis=0)
+
+        keep_index = keep_index[valid_fg]
+
         # keep_index = pos_index
         if len(label) != 0:
             gt_roi_label = gt_roi_label[keep_index]
@@ -129,8 +157,7 @@ class ProposalTargetCreator(object):
             gt_roi_label = None
         sample_roi = roi[keep_index]
 
-        # include global scene
-        secondary_sample_roi = roi[neg_index]
+        secondary_sample_roi = roi[secondary_fg]
 
         # Compute offsets and scales to match sampled RoIs to the GTs.
         gt_roi_loc = bbox2loc(sample_roi, bbox[gt_assignment[keep_index]])
