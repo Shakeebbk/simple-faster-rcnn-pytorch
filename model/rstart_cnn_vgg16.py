@@ -115,15 +115,15 @@ class VGG16RoIHead(nn.Module):
         self.spatial_scale = spatial_scale
         self.roi = RoIPool( (self.roi_size, self.roi_size),self.spatial_scale)
 
-        # # for secondary
-        # self.context_classifier = copy.deepcopy(classifier)
-        # self.context_cls_loc = nn.Linear(4096, n_class * 4)
-        # self.context_score = nn.Linear(4096, n_class)
+        # for secondary
+        self.context_classifier = copy.deepcopy(classifier)
+        self.context_cls_loc = nn.Linear(4096, n_class * 4)
+        self.context_score = nn.Linear(4096, n_class)
 
-        # normal_init(self.context_cls_loc, 0, 0.001)
-        # normal_init(self.context_score, 0, 0.01)
+        normal_init(self.context_cls_loc, 0, 0.001)
+        normal_init(self.context_score, 0, 0.01)
 
-        # self.context_roi = RoIPool((self.roi_size, self.roi_size), self.spatial_scale)
+        self.context_roi = RoIPool((self.roi_size, self.roi_size), self.spatial_scale)
 
     def forward(self, x, rois, roi_indices, context_rois, context_roi_indices):
     # def forward(self, x, rois, roi_indices):
@@ -157,22 +157,22 @@ class VGG16RoIHead(nn.Module):
         roi_cls_locs = self.cls_loc(fc7)
         roi_scores = self.score(fc7)
         
-        context_roi_scores = 0
+        # context_roi_scores = 0
         # in case roi_indices is  ndarray
-        # context_roi_indices = at.totensor(context_roi_indices).float()
-        # context_rois = at.totensor(context_rois).float()
-        # context_indices_and_rois = t.cat(
-        #     [context_roi_indices[:, None], context_rois], dim=1)
-        # # NOTE: important: yx->xy
-        # context_xy_indices_and_rois = context_indices_and_rois[:, [
-        #     0, 2, 1, 4, 3]]
-        # context_indices_and_rois = context_xy_indices_and_rois.contiguous()
+        context_roi_indices = at.totensor(context_roi_indices).float()
+        context_rois = at.totensor(context_rois).float()
+        context_indices_and_rois = t.cat(
+            [context_roi_indices[:, None], context_rois], dim=1)
+        # NOTE: important: yx->xy
+        context_xy_indices_and_rois = context_indices_and_rois[:, [
+            0, 2, 1, 4, 3]]
+        context_indices_and_rois = context_xy_indices_and_rois.contiguous()
 
-        # context_pool = self.context_roi(x, context_indices_and_rois)
-        # context_pool = context_pool.view(context_pool.size(0), -1)
-        # context_fc7 = self.context_classifier(context_pool)
-        # context_roi_cls_locs = self.context_cls_loc(context_fc7)
-        # context_roi_scores = self.context_score(context_fc7)
+        context_pool = self.context_roi(x, context_indices_and_rois)
+        context_pool = context_pool.view(context_pool.size(0), -1)
+        context_fc7 = self.context_classifier(context_pool)
+        context_roi_cls_locs = self.context_cls_loc(context_fc7)
+        context_roi_scores = self.context_score(context_fc7)
         
         return roi_cls_locs, roi_scores, context_roi_scores
         # return roi_cls_locs, roi_scores

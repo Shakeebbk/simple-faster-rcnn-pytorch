@@ -137,14 +137,14 @@ class RStarCNNTrainer(nn.Module):
 
 
         # ----------------- MIL context scores ------------------#
-        # print(
-        #     f"rois score shape {roi_score.shape} sec rois score shape {secondary_roi_score.shape}")
-        # secondary_roi_score = t.max(secondary_roi_score, dim=0).values
+#         print(
+#             f"rois score shape {roi_score.shape} sec rois score shape {secondary_roi_score.shape}")
+        secondary_roi_score = t.max(secondary_roi_score, dim=0).values
         # print(
         #     f"rois score shape {roi_score.shape} sec rois score shape {secondary_roi_score.shape}")
 
         # print(f"secondary_roi_score {secondary_roi_score}")
-        # roi_score = t.add(roi_score, secondary_roi_score)
+        roi_score = t.add(roi_score, secondary_roi_score)
 
         # ------------------ RPN losses -------------------#
         gt_rpn_loc, gt_rpn_label = self.anchor_target_creator(
