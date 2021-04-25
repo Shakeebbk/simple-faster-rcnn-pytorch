@@ -87,7 +87,7 @@ class VOCBboxDataset:
 
     def __len__(self):
         # DEBUG
-        return len(self.ids[:50])
+        return len(self.ids)
 
     def get_example(self, i):
         """Returns the i-th example.
