@@ -93,18 +93,18 @@ class GatingModule(nn.Module):
         # alpha is in the dimension batchsize x num_context_regions
         # self.alphas = nn.Parameter(t.FloatTensor(1, num_context_regions))
         self.alphas = t.nn.Parameter(t.empty(
-            [10, 10], dtype=t.float, device="cuda"))
+            [10, 4096], dtype=t.float, device="cuda"))
         nn.init.kaiming_uniform_(self.alphas, a=math.sqrt(5))  # weight init
 
     def forward(self, primary_features, secondary_context_features):
 #         print(secondary_context_features.shape, primary_features.shape) # 1280, 128
         # self.alphas = nn.Softmax(t.mm(secondary_context_features, t.transpose(primary_features, 0, 1)))
-        alphas = t.mm(secondary_context_features,
-                          t.transpose(primary_features, 0, 1))
+#         alphas = t.mm(secondary_context_features,
+#                           t.transpose(primary_features, 0, 1))
 #         print(alphas.shape) # 1280 * 128
         # print(secondary_context_features.shape)
-        weighted_feat = t.mul(alphas[:, 0].reshape(
-            secondary_context_features.shape[0], 1), secondary_context_features)
+        # weighted_feat = t.mul(self.alphas[:, 0].reshape(
+        #     secondary_context_features.shape[0], 1), secondary_context_features)
 #         print(weighted_feat.shape) # 1280 * 4096
         # print(primary_features.shape) 128 * 4096
         # we want ext dimension - 128 * (10+1) * 4096
@@ -113,9 +113,12 @@ class GatingModule(nn.Module):
         extended_features = extended_features.cuda()
         # 32 = num batches
         for i in range(primary_features.shape[0]):
+            # alpha 1*10, secondary_feat[i] 1*10 weighted_feat 1*10
+            weighted_feat = t.mul(
+                self.alphas, secondary_context_features[i*10:(i+1)*10])
             # print(f"DEBUG: forward: {primary_features[i].shape} {weighted_feat[i*10:(i+1)*10].shape}")
             ex_feat = t.cat((primary_features[i].reshape(
-                1, 4096), weighted_feat[i*10:(i+1)*10]))
+                1, 4096), weighted_feat))
             # print(f"DEBUG: forward: {ex_feat.shape} {extended_features[0].shape}")
             extended_features[i, :, :] = ex_feat
 
@@ -154,19 +157,19 @@ class VGG16RoIHead(nn.Module):
         self.roi = RoIPool( (self.roi_size, self.roi_size),self.spatial_scale)
 
         # for secondary
-#         self.context_classifier = copy.deepcopy(classifier)
+        self.context_classifier = copy.deepcopy(classifier)
         # self.context_cls_loc = nn.Linear(4096, n_class * 4)
 #         self.context_score = nn.Linear(4096, n_class)
 
         # normal_init(self.context_cls_loc, 0, 0.001)
 #         normal_init(self.context_score, 0, 0.01)
 
-#         self.context_roi = RoIPool((self.roi_size, self.roi_size), self.spatial_scale)
+        self.context_roi = RoIPool((self.roi_size, self.roi_size), self.spatial_scale)
 
-#         self.gating_module = GatingModule()
+        self.gating_module = GatingModule()
         
-#         self.cls_score = nn.Linear(45056, n_class)
-#         normal_init(self.cls_score, 0, 0.01)
+        self.cls_score = nn.Linear(45056, n_class)
+        normal_init(self.cls_score, 0, 0.01)
 
         # for contextual relevance
         self.context_relevance_classifier = copy.deepcopy(classifier)
@@ -213,27 +216,28 @@ class VGG16RoIHead(nn.Module):
         
         # context_roi_scores = 0
         # in case roi_indices is  ndarray
-#         context_roi_indices = at.totensor(context_roi_indices).float()
-#         context_rois = at.totensor(context_rois).float()
-#         context_indices_and_rois = t.cat(
-#             [context_roi_indices[:, None], context_rois], dim=1)
-#         # NOTE: important: yx->xy
-#         context_xy_indices_and_rois = context_indices_and_rois[:, [
-#             0, 2, 1, 4, 3]]
-#         context_indices_and_rois = context_xy_indices_and_rois.contiguous()
+        context_roi_indices = at.totensor(context_roi_indices).float()
+        context_rois = at.totensor(context_rois).float()
+        context_indices_and_rois = t.cat(
+            [context_roi_indices[:, None], context_rois], dim=1)
+        # NOTE: important: yx->xy
+        context_xy_indices_and_rois = context_indices_and_rois[:, [
+            0, 2, 1, 4, 3]]
+        context_indices_and_rois = context_xy_indices_and_rois.contiguous()
 
-# #         print(f"DEBUG: {context_indices_and_rois.shape}")
-#         context_pool = self.context_roi(x, context_indices_and_rois)
-#         context_pool = context_pool.view(context_pool.size(0), -1)
-#         context_fc7 = self.context_classifier(context_pool)
+#         print(f"DEBUG: {context_indices_and_rois.shape}")
+        context_pool = self.context_roi(x, context_indices_and_rois)
+        context_pool = context_pool.view(context_pool.size(0), -1)
+        context_fc7 = self.context_classifier(context_pool)
         # context_roi_cls_locs = self.context_cls_loc(context_fc7)
 #         context_roi_scores = self.context_score(context_fc7)
         
         # gating
-#         ex_feat = self.gating_module(fc7, context_fc7)
-#         ex_feat = ex_feat.view(ex_feat.size(0), -1)
-#         roi_scores = self.cls_score(ex_feat)
-#         print(f"cls_score: {roi_scores}")
+        ex_feat = self.gating_module(fc7, context_fc7)
+        ex_feat = ex_feat.view(ex_feat.size(0), -1)
+        ex_scores = self.cls_score(ex_feat)
+#         print(f"cls_score: {ex_scores}")
+        roi_scores = ex_scores
         
         # context relevance score
         context_relevance_roi_indices = at.totensor(context_roi_indices).float()
