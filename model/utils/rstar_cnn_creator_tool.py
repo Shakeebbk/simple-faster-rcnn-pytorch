@@ -164,6 +164,7 @@ class ProposalTargetCreator(object):
         gt_roi_loc = ((gt_roi_loc - np.array(loc_normalize_mean, np.float32)
                        ) / np.array(loc_normalize_std, np.float32))
 
+#         print(f"DEBUG: {len(sample_roi)}")
         return sample_roi, secondary_sample_roi, gt_roi_loc, gt_roi_label
 
 

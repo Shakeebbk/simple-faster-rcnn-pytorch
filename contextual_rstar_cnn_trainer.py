@@ -141,6 +141,7 @@ class RStarCNNTrainer(nn.Module):
         #     f"rois score shape {roi_score.shape} sec rois score shape {secondary_roi_score.shape}")
 
         # print(f"secondary_roi_score {secondary_roi_score}")
+#         print(f"{roi_score}")
         roi_score = t.add(roi_score, secondary_roi_score)
 
         # ------------------ RPN losses -------------------#
@@ -176,7 +177,8 @@ class RStarCNNTrainer(nn.Module):
             gt_roi_label.data,
             self.roi_sigma)
 
-        # print(f"DEBUG: {len(roi_score)}, {gt_roi_label}")
+#         print(f"DEBUG: {len(roi_score)}, {gt_roi_label}")
+#         print(f"DEBUG: {roi_score}")
         roi_cls_loss = nn.CrossEntropyLoss()(roi_score, gt_roi_label.cuda())
         # print(f"roi_cls_loss [{roi_cls_loss}]")
 
