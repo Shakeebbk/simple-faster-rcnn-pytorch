@@ -141,11 +141,11 @@ class RStarCNN(nn.Module):
             self.loc_normalize_std)
 
         # add global scene
-        H, W = img_size
-        global_scene = [0, 0, W, H]  # t.tensor([0, 0, W, H])
+#         H, W = img_size
+#         global_scene = [0, 0, W, H]  # t.tensor([0, 0, W, H])
         # secondary_sample_roi = t.cat(secondary_sample_roi, global_scene.unsqueeze(0))
-        secondary_sample_roi = np.append(
-            secondary_sample_roi, [global_scene], axis=0)
+#         secondary_sample_roi = np.append(
+#             secondary_sample_roi, [global_scene], axis=0)
 
         sample_roi_indices = t.zeros(len(sample_roi))
 
@@ -157,11 +157,11 @@ class RStarCNN(nn.Module):
         # # ---- MIL ---- #
         # # print(
         # #     f"BEFORE:rois score shape {roi_scores.shape} sec rois score shape {secondary_roi_scores.shape}")
-        # secondary_roi_scores = t.max(secondary_roi_scores, dim=0).values
+        secondary_roi_scores = t.max(secondary_roi_scores, dim=0).values
         # print(
         #     f"AFTER:rois score shape {roi_scores.shape} sec rois score shape {secondary_roi_scores.shape}")
 
-        # roi_scores = t.add(roi_scores, secondary_roi_scores)
+        roi_scores = t.add(roi_scores, secondary_roi_scores)
 
         return roi_cls_locs, roi_scores, sample_roi, sample_roi_indices
         # return roi_cls_locs, roi_scores, rois, roi_indices
