@@ -65,6 +65,7 @@ def train(**kwargs):
                                        )
     rstar_cnn = RStarCNNVGG16()
     print('model construct completed')
+#     print(rstar_cnn)
     trainer = RStarCNNTrainer(rstar_cnn).cuda()
     if opt.load_path:
         trainer.load(opt.load_path)
@@ -107,9 +108,9 @@ def train(**kwargs):
             #     trainer.vis.text(str(trainer.rpn_cm.value().tolist()), win='rpn_cm')
             #     # roi confusion matrix
             #     trainer.vis.img('roi_cm', at.totensor(trainer.roi_cm.conf, False).float())
-            log_info = 'lr:{}, loss:{}'.format(str(trainer.rstar_cnn.optimizer.param_groups[0]['lr']),
-                                                      str(trainer.get_meter_data()))
-            print(log_info)
+#             log_info = 'lr:{}, loss:{}'.format(str(trainer.rstar_cnn.optimizer.param_groups[0]['lr']),
+#                                                       str(trainer.get_meter_data()))
+#             print(log_info)
         print(f"test its [{len(test_dataloader)}]")
         eval_result = eval(test_dataloader, rstar_cnn, test_num=opt.test_num)
         # trainer.vis.plot('test_map', eval_result['map'])

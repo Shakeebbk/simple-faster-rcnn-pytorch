@@ -142,7 +142,7 @@ class RStarCNNTrainer(nn.Module):
 
         # print(f"secondary_roi_score {secondary_roi_score}")
 #         print(f"{roi_score}")
-        roi_score = t.add(roi_score, secondary_roi_score)
+        roi_score = t.sub(roi_score, secondary_roi_score)
 
         # ------------------ RPN losses -------------------#
         gt_rpn_loc, gt_rpn_label = self.anchor_target_creator(

@@ -172,14 +172,26 @@ class VGG16RoIHead(nn.Module):
         normal_init(self.cls_score, 0, 0.01)
 
         # for contextual relevance
-        self.context_relevance_classifier = copy.deepcopy(classifier)
+#         self.context_relevance_classifier = copy.deepcopy(classifier)
         # self.context_relevance_cls_loc = nn.Linear(4096, n_class * 4)
+        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
+        self.context_relevance_classifier = nn.Sequential(
+            nn.Linear(512 * 7 * 7, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+        )
+    
         self.context_relevance_score = nn.Linear(4096, n_class)
 
         # normal_init(self.context_relevance_cls_loc, 0, 0.001)
         normal_init(self.context_relevance_score, 0, 0.01)
 
-        self.context_relevance_roi = RoIPool((self.roi_size, self.roi_size), self.spatial_scale)
+        
+        
+#         self.context_relevance_roi = RoIPool((self.roi_size, self.roi_size), self.spatial_scale)
 
     def forward(self, x, rois, roi_indices, context_rois, context_roi_indices):
     # def forward(self, x, rois, roi_indices):
@@ -240,17 +252,19 @@ class VGG16RoIHead(nn.Module):
         roi_scores = ex_scores
         
         # context relevance score
-        context_relevance_roi_indices = at.totensor(context_roi_indices).float()
-        context_relevance_rois = at.totensor(context_rois).float()
-        context_relevance_indices_and_rois = t.cat(
-            [context_relevance_roi_indices[:, None], context_relevance_rois], dim=1)
-        # NOTE: important: yx->xy
-        context_relevance_xy_indices_and_rois = context_relevance_indices_and_rois[:, [
-            0, 2, 1, 4, 3]]
-        context_relevance_indices_and_rois = context_relevance_xy_indices_and_rois.contiguous()
+#         context_relevance_roi_indices = at.totensor(context_roi_indices).float()
+#         context_relevance_rois = at.totensor(context_rois).float()
+#         context_relevance_indices_and_rois = t.cat(
+#             [context_relevance_roi_indices[:, None], context_relevance_rois], dim=1)
+#         # NOTE: important: yx->xy
+#         context_relevance_xy_indices_and_rois = context_relevance_indices_and_rois[:, [
+#             0, 2, 1, 4, 3]]
+#         context_relevance_indices_and_rois = context_relevance_xy_indices_and_rois.contiguous()
 
-        context_relevance_pool = self.context_relevance_roi(x, context_relevance_indices_and_rois)
-        context_relevance_pool = context_relevance_pool.view(context_relevance_pool.size(0), -1)
+#         context_relevance_pool = self.context_relevance_roi(x, context_relevance_indices_and_rois)
+#         context_relevance_pool = context_relevance_pool.view(context_relevance_pool.size(0), -1)
+        context_relevance_pool = self.avgpool(x)
+        context_relevance_pool = t.flatten(context_relevance_pool, 1)
         context_relevance_fc7 = self.context_relevance_classifier(context_relevance_pool)
         context_relevance_roi_scores = self.context_relevance_score(context_relevance_fc7)
         
