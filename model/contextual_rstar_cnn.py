@@ -157,7 +157,7 @@ class RStarCNN(nn.Module):
         # # ---- MIL ---- #
         # # print(
         # #     f"BEFORE:rois score shape {roi_scores.shape} sec rois score shape {secondary_roi_scores.shape}")
-        secondary_roi_scores = t.max(secondary_roi_scores, dim=0).values
+#         secondary_roi_scores = t.max(secondary_roi_scores, dim=0).values
         # print(
         #     f"AFTER:rois score shape {roi_scores.shape} sec rois score shape {secondary_roi_scores.shape}")
 

@@ -34,12 +34,12 @@ class Config:
     pretrained_model = 'vgg16'
 
     # training
-    epoch = 14
+    epoch = 10
 
 
     use_adam = False # Use Adam optimizer
     use_chainer = False # try match everything as chainer
-    use_drop = False # use dropout in RoIHead
+    use_drop = True # use dropout in RoIHead
     # debug
     debug_file = '/tmp/debugf'
 
