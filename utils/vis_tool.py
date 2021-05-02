@@ -11,29 +11,41 @@ from matplotlib import pyplot as plot
 # from data.voc_dataset import VOC_BBOX_LABEL_NAMES
 
 
+# VOC_BBOX_LABEL_NAMES = (
+#     'fly',
+#     'bike',
+#     'bird',
+#     'boat',
+#     'pin',
+#     'bus',
+#     'c',
+#     'cat',
+#     'chair',
+#     'cow',
+#     'table',
+#     'dog',
+#     'horse',
+#     'moto',
+#     'p',
+#     'plant',
+#     'shep',
+#     'sofa',
+#     'train',
+#     'tv',
+# )
 VOC_BBOX_LABEL_NAMES = (
-    'fly',
-    'bike',
-    'bird',
-    'boat',
-    'pin',
-    'bus',
-    'c',
-    'cat',
-    'chair',
-    'cow',
-    'table',
-    'dog',
-    'horse',
-    'moto',
-    'p',
-    'plant',
-    'shep',
-    'sofa',
-    'train',
-    'tv',
+    'jumping',
+    'other',
+    'phoning',
+    'playinginstrument',
+    'reading',
+    'ridingbike',
+    'ridinghorse',
+    'running',
+    'takingphoto',
+    'usingcomputer',
+    'walking'
 )
-
 
 def vis_image(img, ax=None):
     """Visualize a color image.

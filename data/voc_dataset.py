@@ -84,9 +84,9 @@ class VOCBboxDataset:
 
         self.ids = [id_.strip() for id_ in open(id_list_file)]
         if training:
-            self.ids = self.ids[:3588]
+            self.ids = self.ids[:1288]
         else:
-            self.ids = self.ids[3588:]
+            self.ids = self.ids[3288:]
         
         print(f"Num of ids [{len(self.ids)}]")
         self.data_dir = data_dir

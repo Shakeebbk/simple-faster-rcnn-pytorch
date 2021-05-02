@@ -21,25 +21,25 @@ class Config:
     # 0.0005 in origin paper but 0.0001 in tf-faster-rcnn
     weight_decay = 0.0005
     lr_decay = 0.1  # 1e-3 -> 1e-4
-    lr = 1e-3
+    lr = 1e-4
 
 
     # visualization
     env = 'faster-rcnn'  # visdom env
     port = 8097
-    plot_every = 40  # vis every N iter
+    plot_every = 100  # vis every N iter
 
     # preset
     data = 'voc'
     pretrained_model = 'vgg16'
 
     # training
-    epoch = 10
+    epoch = 5
 
 
     use_adam = False # Use Adam optimizer
     use_chainer = False # try match everything as chainer
-    use_drop = True # use dropout in RoIHead
+    use_drop = False # use dropout in RoIHead
     # debug
     debug_file = '/tmp/debugf'
 
