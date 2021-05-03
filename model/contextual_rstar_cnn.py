@@ -257,7 +257,7 @@ class RStarCNN(nn.Module):
                 prepared_imgs.append(img)
                 sizes.append(size)
         else:
-             prepared_imgs = imgs 
+             prepared_imgs = imgs
         bboxes = list()
         labels = list()
         scores = list()
@@ -307,7 +307,7 @@ class RStarCNN(nn.Module):
 
     def get_optimizer(self):
         """
-        return optimizer, It could be overwriten if you want to specify 
+        return optimizer, It could be overwriten if you want to specify
         special optimizer
         """
         lr = opt.lr

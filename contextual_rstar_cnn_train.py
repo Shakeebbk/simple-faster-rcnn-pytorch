@@ -121,10 +121,10 @@ def train(**kwargs):
         # trainer.vis.log(log_info)
         print(log_info)
 
-        if eval_result['map'] > best_map:
-            best_map = eval_result['map']
-            best_path = trainer.save(best_map=best_map)
-        if epoch == 9:
+        # if eval_result['map'] > best_map:
+        best_map = eval_result['map']
+        best_path = trainer.save(best_map=best_map)
+        if epoch == 999:
             trainer.load(best_path)
             trainer.rstar_cnn.scale_lr(opt.lr_decay)
             lr_ = lr_ * opt.lr_decay
