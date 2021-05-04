@@ -127,13 +127,12 @@ def train(**kwargs):
         
         # trainer.vis.plot('test_map', eval_result['map'])
         lr_ = trainer.rstar_cnn.optimizer.param_groups[0]['lr']
-        log_info = 'lr:{}, val_map:{}, test_map{}, loss:{}'.format(str(lr_),
+        log_info = 'lr:{}, val_map:{}, loss:{}'.format(str(lr_),
                                                       str(eval_result['map']),
-                                                    #   str(test_eval_result['map']),
-                                                    "NA",
                                                       str(trainer.get_meter_data()))
         # trainer.vis.log(log_info)
         print(log_info)
+        print(str(eval_result['ap']))
 
         # if eval_result['map'] > best_map:
         best_map = eval_result['map']
