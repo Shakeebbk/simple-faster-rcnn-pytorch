@@ -63,8 +63,8 @@ class VOCBboxDataset:
     """
 
     # def __init__(self, data_dir, split='trainval',
-    def __init__(self, data_dir, split='trainval',
-                 use_difficult=False, return_difficult=False,
+    def __init__(self, data_dir, split='train',
+                 use_difficult=True, return_difficult=True,
                  ):
 
         # if split not in ['train', 'trainval', 'val']:
@@ -74,19 +74,11 @@ class VOCBboxDataset:
         #             'for 2012 dataset. For 2007 dataset, you can pick \'test\''
         #             ' in addition to the above mentioned splits.'
         #         )
-        training = True
-        if split != "trainval":
-            training = False
-        split = "trainval"
         id_list_file = os.path.join(
             # data_dir, 'ImageSets/Main/{0}.txt'.format(split))
             data_dir, 'ImageSets/Action/{0}.txt'.format(split))
 
         self.ids = [id_.strip() for id_ in open(id_list_file)]
-        if training:
-            self.ids = self.ids
-        else:
-            self.ids = self.ids[3588:]
         
         print(f"Num of ids [{len(self.ids)}]")
         self.data_dir = data_dir
@@ -134,6 +126,8 @@ class VOCBboxDataset:
             # get actions
             actions = []
             actions_obj = obj.find("actions")
+            if not actions_obj:
+                continue
             for iaction in actions_obj:
                 if iaction.text == "1":
                     actions.append(iaction.tag.lower().strip())

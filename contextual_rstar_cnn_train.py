@@ -6,7 +6,7 @@ import matplotlib
 from tqdm import tqdm
 
 from utils.config import opt
-from data.dataset import Dataset, TestDataset, inverse_normalize
+from data.dataset import Dataset, TestDataset, ValDataset, inverse_normalize
 from model.contextual_rstart_cnn_vgg16 import RStarCNNVGG16
 from torch.utils import data as data_
 from contextual_rstar_cnn_trainer import RStarCNNTrainer
@@ -56,13 +56,20 @@ def train(**kwargs):
                                   shuffle=True, \
                                   # pin_memory=True,
                                   num_workers=opt.num_workers)
-    testset = TestDataset(opt)
-    test_dataloader = data_.DataLoader(testset,
+    valset = ValDataset(opt)
+    val_dataloader = data_.DataLoader(valset,
                                        batch_size=1,
                                        num_workers=opt.test_num_workers,
-                                       shuffle=False, \
+                                       shuffle=False,
                                        pin_memory=True
                                        )
+    # testset = TestDataset(opt)
+    # test_dataloader = data_.DataLoader(testset,
+    #                                    batch_size=1,
+    #                                    num_workers=opt.test_num_workers,
+    #                                    shuffle=False, \
+    #                                    pin_memory=True
+    #                                    )
     rstar_cnn = RStarCNNVGG16()
     print('model construct completed')
 #     print(rstar_cnn)
@@ -111,13 +118,20 @@ def train(**kwargs):
 #             log_info = 'lr:{}, loss:{}'.format(str(trainer.rstar_cnn.optimizer.param_groups[0]['lr']),
 #                                                       str(trainer.get_meter_data()))
 #             print(log_info)
-        print(f"test its [{len(test_dataloader)}]")
-        eval_result = eval(test_dataloader, rstar_cnn, test_num=opt.test_num)
+        print(f"val its [{len(val_dataloader)}]")
+        eval_result = eval(val_dataloader, rstar_cnn, test_num=opt.test_num)
+        # trainer.vis.plot('test_map', eval_result['map'])
+        
+        # print(f"test its [{len(test_dataloader)}]")
+        # test_eval_result = eval(test_dataloader, rstar_cnn, test_num=opt.test_num)
+        
         # trainer.vis.plot('test_map', eval_result['map'])
         lr_ = trainer.rstar_cnn.optimizer.param_groups[0]['lr']
-        log_info = 'lr:{}, map:{},loss:{}'.format(str(lr_),
-                                                  str(eval_result['map']),
-                                                  str(trainer.get_meter_data()))
+        log_info = 'lr:{}, val_map:{}, test_map{}, loss:{}'.format(str(lr_),
+                                                      str(eval_result['map']),
+                                                    #   str(test_eval_result['map']),
+                                                    "NA",
+                                                      str(trainer.get_meter_data()))
         # trainer.vis.log(log_info)
         print(log_info)
 

@@ -34,7 +34,7 @@ class Config:
     pretrained_model = 'vgg16'
 
     # training
-    epoch = 5
+    epoch = 3
 
 
     use_adam = False # Use Adam optimizer
