@@ -184,7 +184,7 @@ class RStarCNNTrainer(nn.Module):
 
         self.roi_cm.add(at.totensor(roi_score, False), gt_roi_label.data.long())
 
-        losses = [rpn_loc_loss, rpn_cls_loss, roi_loc_loss, roi_cls_loss]
+        losses = [rpn_loc_loss, rpn_cls_loss, roi_loc_loss, 2.5*roi_cls_loss]
         losses = losses + [sum(losses)]
 
         return LossTuple(*losses)
