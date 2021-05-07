@@ -48,7 +48,7 @@ def eval(dataloader, rstar_cnn, test_num=10000):
         "gt_labels"   : gt_labels
     }
 
-    with open('results.pkl', 'wb') as f:
+    with open('results_updated.pkl', 'wb') as f:
         pickle.dump(result, f)
 
     result = eval_detection_voc(

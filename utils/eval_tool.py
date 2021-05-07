@@ -154,6 +154,7 @@ def calc_detection_voc_prec_rec(
     n_pos = defaultdict(int)
     score = defaultdict(list)
     match = defaultdict(list)
+    x_scores = defaultdict(list)
 
     for pred_bbox, pred_label, pred_score, gt_bbox, gt_label, gt_difficult in \
             six.moves.zip(
@@ -179,10 +180,10 @@ def calc_detection_voc_prec_rec(
             n_pos[l] += np.logical_not(gt_difficult_l).sum()
             score[l].extend(pred_score_l)
 
-            if len(pred_bbox_l) == 0:
-                continue
             if len(gt_bbox_l) == 0:
-                match[l].extend((0,) * pred_bbox_l.shape[0])
+                continue
+            if len(pred_bbox_l) == 0:
+                match[l].extend((0,) * gt_bbox_l.shape[0])
                 continue
 
             # VOC evaluation follows integer typed bounding boxes.
@@ -191,25 +192,22 @@ def calc_detection_voc_prec_rec(
             gt_bbox_l = gt_bbox_l.copy()
             gt_bbox_l[:, 2:] += 1
 
-            iou = bbox_iou(pred_bbox_l, gt_bbox_l)
+            iou = bbox_iou(gt_bbox_l, pred_bbox_l)
             gt_index = iou.argmax(axis=1)
             # set -1 if there is no matching ground truth
             gt_index[iou.max(axis=1) < iou_thresh] = -1
             del iou
 
-            selec = np.zeros(gt_bbox_l.shape[0], dtype=bool)
-            for gt_idx in gt_index:
+            x_score = np.zeros(len(gt_index), dtype=float)
+            for i, gt_idx in enumerate(gt_index):
                 if gt_idx >= 0:
-                    if gt_difficult_l[gt_idx]:
-                        match[l].append(-1)
-                    else:
-                        if not selec[gt_idx]:
-                            match[l].append(1)
-                        else:
-                            match[l].append(0)
-                    selec[gt_idx] = True
+                    match[l].append(1)
+                    x_score[i] = score[l][gt_idx]
                 else:
                     match[l].append(0)
+
+            x_scores[l].extend(x_score)
+                
 
     for iter_ in (
             pred_bboxes, pred_labels, pred_scores,
@@ -222,7 +220,7 @@ def calc_detection_voc_prec_rec(
     rec = [None] * n_fg_class
 
     for l in n_pos.keys():
-        score_l = np.array(score[l])
+        score_l = np.array(x_scores[l])
         match_l = np.array(match[l], dtype=np.int8)
 
         order = score_l.argsort()[::-1]
