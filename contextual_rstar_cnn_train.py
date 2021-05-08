@@ -92,8 +92,10 @@ def train(**kwargs):
 
     #trainer.vis.text(dataset.db.label_names, win='labels')
     print(dataset.db.label_names)
-    best_map = 0
+    best_map = 0.7375261670194739
+    last_path = None
     lr_ = opt.lr
+    best_path = "./checkpoints/fasterrcnn_05090351_0.7375261670194739"
     for epoch in range(opt.epoch):
         trainer.reset_meters()
         print(f"train its [{len(dataloader)}]")
@@ -151,8 +153,10 @@ def train(**kwargs):
             best_map = eval_result['map']
             best_path = trainer.save(best_map=best_map)
         else:
-            _ = trainer.save(best_map=eval_result['map'])
-        if epoch == 5:
+            import os
+            os.system(f"rm -rf {last_path}")
+            last_path = trainer.save(best_map=eval_result['map'])
+        if epoch in [14, 24]:
             trainer.load(best_path)
             trainer.rstar_cnn.scale_lr(opt.lr_decay)
             lr_ = lr_ * opt.lr_decay
