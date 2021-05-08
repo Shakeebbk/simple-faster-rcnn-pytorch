@@ -149,7 +149,7 @@ class RStarCNN(nn.Module):
 
         sample_roi_indices = t.zeros(len(sample_roi))
 
-        roi_cls_locs, roi_scores, secondary_roi_scores = self.head(
+        roi_cls_locs, roi_scores = self.head(
             h, sample_roi, sample_roi_indices, secondary_sample_roi, t.zeros(len(secondary_sample_roi)))
         # roi_cls_locs, roi_scores = self.head(
         #     h, rois, roi_indices)
@@ -161,7 +161,7 @@ class RStarCNN(nn.Module):
         # print(
         #     f"AFTER:rois score shape {roi_scores.shape} sec rois score shape {secondary_roi_scores.shape}")
 
-        roi_scores = t.sub(roi_scores, secondary_roi_scores)
+        # roi_scores = t.sub(roi_scores, secondary_roi_scores)
 
         return roi_cls_locs, roi_scores, sample_roi, sample_roi_indices
         # return roi_cls_locs, roi_scores, rois, roi_indices

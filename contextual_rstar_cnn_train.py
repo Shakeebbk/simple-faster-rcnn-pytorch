@@ -152,7 +152,7 @@ def train(**kwargs):
             best_path = trainer.save(best_map=best_map)
         else:
             _ = trainer.save(best_map=eval_result['map'])
-        if epoch == 5:
+        if epoch in [9, 19, 29]:
             trainer.load(best_path)
             trainer.rstar_cnn.scale_lr(opt.lr_decay)
             lr_ = lr_ * opt.lr_decay

@@ -121,7 +121,7 @@ class RStarCNNTrainer(nn.Module):
         # NOTE it's all zero because now it only support for batch=1 now
         sample_roi_index = t.zeros(len(sample_roi))
         secondary_sample_roi_index = t.zeros(len(secondary_sample_roi))
-        roi_cls_loc, roi_score, secondary_roi_score = self.rstar_cnn.head(
+        roi_cls_loc, roi_score = self.rstar_cnn.head(
             features,
             sample_roi,
             sample_roi_index,
@@ -142,7 +142,7 @@ class RStarCNNTrainer(nn.Module):
 
         # print(f"secondary_roi_score {secondary_roi_score}")
 #         print(f"{roi_score}")
-        roi_score = t.sub(roi_score, secondary_roi_score)
+        # roi_score = t.sub(roi_score, secondary_roi_score)
 
         # ------------------ RPN losses -------------------#
         gt_rpn_loc, gt_rpn_label = self.anchor_target_creator(
