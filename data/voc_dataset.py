@@ -79,6 +79,13 @@ class VOCBboxDataset:
             data_dir, 'ImageSets/Action/{0}.txt'.format(split))
 
         self.ids = [id_.strip() for id_ in open(id_list_file)]
+
+        import random
+        random.seed(42)
+        choice_num = 1000
+        if split == "val":
+            choice_num = 500
+        self.ids = random.sample(self.ids, choice_num)
         
         print(f"Num of ids [{len(self.ids)}]")
         self.data_dir = data_dir
