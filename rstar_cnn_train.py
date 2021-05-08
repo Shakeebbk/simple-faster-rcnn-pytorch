@@ -6,7 +6,7 @@ import matplotlib
 from tqdm import tqdm
 
 from utils.config import opt
-from data.dataset import Dataset, TestDataset, inverse_normalize
+from data.dataset import Dataset, TestDataset, ValDataset, inverse_normalize
 from model import RStarCNNVGG16
 from torch.utils import data as data_
 from rstar_cnn_trainer import RStarCNNTrainer
@@ -56,7 +56,7 @@ def train(**kwargs):
                                   shuffle=True, \
                                   # pin_memory=True,
                                   num_workers=opt.num_workers)
-    testset = TestDataset(opt)
+    testset = ValDataset(opt)
     test_dataloader = data_.DataLoader(testset,
                                        batch_size=1,
                                        num_workers=opt.test_num_workers,
@@ -71,7 +71,8 @@ def train(**kwargs):
         print('load pretrained model from %s' % opt.load_path)
     #trainer.vis.text(dataset.db.label_names, win='labels')
     print(dataset.db.label_names)
-    best_map = 0
+    best_map = 0.7219471873583122
+    best_path = "./checkpoints/fasterrcnn_05081323_0.7219471873583122"
     lr_ = opt.lr
     for epoch in range(opt.epoch):
         trainer.reset_meters()
@@ -119,11 +120,14 @@ def train(**kwargs):
                                                   str(trainer.get_meter_data()))
         # trainer.vis.log(log_info)
         print(log_info)
+        print(str(eval_result['ap']))
 
         if eval_result['map'] > best_map:
             best_map = eval_result['map']
             best_path = trainer.save(best_map=best_map)
-        if epoch == 9:
+        else:
+            _ = trainer.save(best_map=eval_result['map'])
+        if epoch in [0, 10, 20]:
             trainer.load(best_path)
             trainer.rstar_cnn.scale_lr(opt.lr_decay)
             lr_ = lr_ * opt.lr_decay

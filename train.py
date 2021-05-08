@@ -70,7 +70,8 @@ def train(**kwargs):
         print('load pretrained model from %s' % opt.load_path)
     #trainer.vis.text(dataset.db.label_names, win='labels')
     print(dataset.db.label_names)
-    best_map = 0
+    best_map = 0.7219471873583122
+    best_path = "./checkpoints/fasterrcnn_05081323_0.7219471873583122"
     lr_ = opt.lr
     for epoch in range(opt.epoch):
         trainer.reset_meters()
@@ -122,7 +123,7 @@ def train(**kwargs):
         if eval_result['map'] > best_map:
             best_map = eval_result['map']
             best_path = trainer.save(best_map=best_map)
-        if epoch == 9:
+        if epoch in [0, 10, 20]:
             trainer.load(best_path)
             trainer.faster_rcnn.scale_lr(opt.lr_decay)
             lr_ = lr_ * opt.lr_decay
