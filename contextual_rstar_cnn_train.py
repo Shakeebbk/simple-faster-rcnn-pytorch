@@ -96,11 +96,11 @@ def train(**kwargs):
     lr_ = opt.lr
     for epoch in range(opt.epoch):
         trainer.reset_meters()
-        print(f"train its [{len(dataloader)}]")
-        for ii, (img, bbox_, label_, scale) in tqdm(enumerate(dataloader)):
-            scale = at.scalar(scale)
-            img, bbox, label = img.cuda().float(), bbox_.cuda(), label_.cuda()
-            trainer.train_step(img, bbox, label, scale)
+        # print(f"train its [{len(dataloader)}]")
+        # for ii, (img, bbox_, label_, scale) in tqdm(enumerate(dataloader)):
+        #     scale = at.scalar(scale)
+        #     img, bbox, label = img.cuda().float(), bbox_.cuda(), label_.cuda()
+        #     trainer.train_step(img, bbox, label, scale)
 
             # if (ii + 1) % opt.plot_every == 0:
             #     if os.path.exists(opt.debug_file):
@@ -147,15 +147,15 @@ def train(**kwargs):
         print(log_info)
         print(str(eval_result['ap']))
 
-        if eval_result['map'] > best_map:
-            best_map = eval_result['map']
-            best_path = trainer.save(best_map=best_map)
-        else:
-            _ = trainer.save(best_map=eval_result['map'])
-        if epoch == 5:
-            trainer.load(best_path)
-            trainer.rstar_cnn.scale_lr(opt.lr_decay)
-            lr_ = lr_ * opt.lr_decay
+        # if eval_result['map'] > best_map:
+        #     best_map = eval_result['map']
+        #     best_path = trainer.save(best_map=best_map)
+        # else:
+        #     _ = trainer.save(best_map=eval_result['map'])
+        # if epoch == 5:
+        #     trainer.load(best_path)
+        #     trainer.rstar_cnn.scale_lr(opt.lr_decay)
+        #     lr_ = lr_ * opt.lr_decay
 
         # if epoch == 13: 
         #     break
